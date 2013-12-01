@@ -4,14 +4,14 @@
 #include <string>
 #include <sstream>
 #include <deque>
+#include <math.h>
 using namespace std;
 
 struct Node {
 	Node *left, *right;
-	int data;
-	int balance;
-	unsigned char height;
-	Node(int val) : left(NULL), right(NULL), data(val) { }
+	int key;
+	int height;
+	Node(int k) : left(NULL), right(NULL), key(k) { }
 };
 
 struct Tree {
@@ -20,63 +20,131 @@ struct Tree {
 
 	void fill(int s) {
 		int v;
-		if (s > 0) {
-			for (int i = 0; i < s; i++) {
-				//v = rand() % 10;
-				addNode(s - i);
-			}
-		}
-		else {
-			v = rand() % 10;
-			addNode(v);
-		}
-		//addNode(8);addNode(4);addNode(12);addNode(2);addNode(6);addNode(10);addNode(14);addNode(1);addNode(3);addNode(5);addNode(7);addNode(9);addNode(11);addNode(13);addNode(15);
+        for (int i = 0; i < s; i++) {
+            v = rand() % 10;
+            addNode(root, v);
+        }
+	}
+    
+    // Добавляем новый узел
+    Node* addNode(Node* n, int k) {
+        if (!n) return new Node(k);
+        if (k < n->key)
+            n->left = addNode(n->left, k);
+        else
+            n->right = addNode(n->right, k);
+        return balance(n);
 	}
 
+    // Удаление ключа k из дерева n
+    Node* removeNode(int k, Node* n) {
+        if (!n) return 0;
+        if (k < n->key)
+            removeNode(k, n->left);
+        else if (k > n->key)
+            removeNode(k, n->right);
+        // k == n->key
+        else {
+            Node* q = n->left;
+            Node* r = n->right;
+            cout << "Узел " << n->key << "удален." << endl;
+            delete n;
+            if (!r) return q;
+            Node* min = findMinNode(r);
+            min->right = removeMinNode(r);
+            min->left = q;
+            return balance(min);
+        }
+        return balance(n);
+    }
+    
+    // Ищем узел c ключом k и возвращаем кол-во шагов
+    int findNode(int k, Node* n) {
+        if (!n) return -100;
+        if (n->key == k)
+            return 1;
+        else if (k < n->key)
+            return findNode(k, n->left) + 1;
+        else
+            return findNode(k, n->right) + 1;
+    }
+    
 private:
-	void addNode(int val) {
-		if (root == NULL) {
-			root = new Node(val);
-		}
-		else {
-			bool isAdded = false;
-			Node *tempNode = root;
-			while (!isAdded) {
-				// Left branch
-				if (tempNode->data > val) {
-					if (tempNode->left != NULL) {
-						tempNode = tempNode->left;
-					}
-					else {
-						tempNode->left = new Node(val);
-						isAdded = true;
-					}
-				}
-				// Current Node
-				else if (tempNode->data == val) {
-					isAdded = true;
-				}
-				// Right branch
-				if (tempNode->data < val) {
-					if (tempNode->right != NULL) {
-						tempNode = tempNode->right;
-					}
-					else {
-						tempNode->right = new Node(val);
-						isAdded = true;
-					}
-				}
-			}
-		}
-	}
-
+    // Получаем высоту дерева n
 	unsigned char height(Node *n) {
 		return n ? n->height : 0;
 	}
 
+    // Получаем разницу в высотах дерева n
 	int balanceFactor(Node *n) {
 		return height(n->left) - height(n->right);
 	}
+
+    // Исправляем высоту дерева n
+    void fixHeight(Node *n) {
+        unsigned char hl = height(n->left);
+        unsigned char hr = height(n->right);
+        n->height = (hl > hr ? hl : hr) + 1;
+    }
+    
+    // Малое правое вращение вокруг узла n
+    Node* smallRightRotation(Node* n) {
+        Node* q = n->left;
+        n->left = q->right;
+        q->right = n;
+        fixHeight(n);
+        fixHeight(q);
+        return q;
+    }
+    
+    // Малое левое вращение
+    Node* smallLeftRotation(Node* n) {
+        Node* q = n->right;
+        n->right = q->left;
+        q->left = n;
+        fixHeight(n);
+        fixHeight(q);
+        return q;
+    }
+    
+    // Балансируем дерево с корнем n и балансом 2.
+    // Достаточно выполнить либо простой поворот влево вокруг n,
+    // либо большое вращение влево вокруг того же n
+    // Для балансировки дерева с корнем n и балансом -2 - симметричные действия
+    Node* balance(Node* n) {
+        fixHeight(n);
+        // Большое правое вращение
+        if (balanceFactor(n) == 2) {
+            if (balanceFactor(n->right) > 0) {
+                n->right = smallRightRotation(n->right);
+            }
+            return smallLeftRotation(n);
+        }
+        // Большое левое вращение
+        else if (balanceFactor(n) == -2) {
+            if (balanceFactor(n->left) > 0) {
+                n->left = smallLeftRotation(n->left);
+            }
+            return smallRightRotation(n);
+        }
+        // Балансировка не нужна
+        else {
+            return n;
+        }
+    }
+    
+    // Поиск узла с минимальным ключом в дереве n
+    Node* findMinNode(Node* n) {
+        return (!n->left) ? findMinNode(n->left) : n;
+    }
+    
+    // Удаление узла с минимальным ключом в дереве n
+    Node* removeMinNode(Node* n) {
+        if (!n->left)
+            return n->right;
+        n->left = removeMinNode(n->left);
+        return balance(n);
+    }
 };
 
 // Print Tree in console
@@ -90,9 +158,9 @@ struct TreePrinter {
 	}
 
 	// Convert an integer value to string
-	string intToString(int val) {
+	string intToString(int key) {
 		ostringstream ss;
-		ss << val;
+		ss << key;
 		return ss.str();
 	}
 
@@ -111,7 +179,7 @@ struct TreePrinter {
 		deque<Node*>::const_iterator iter = nodesQueue.begin();
 		for (int i = 0; i < nodesInThisLevel; i++, iter++) {
 			out << ((i == 0) ? setw(startLen) : setw(nodeSpaceLen)) << "" << ((*iter && (*iter)->left) ? setfill('_') : setfill(' '));
-			out << setw(branchLen + 2) << ((*iter) ? intToString((*iter)->data) : "");
+			out << setw(branchLen + 2) << ((*iter) ? intToString((*iter)->key) : "");
 			out << ((*iter && (*iter)->right) ? setfill('_') : setfill(' ')) << setw(branchLen) << "" << setfill(' ');
 		}
 		out << endl;
@@ -121,7 +189,7 @@ struct TreePrinter {
 	void printLeaves(int indentSpace, int level, int nodesInThisLevel, const deque<Node*>& nodesQueue, ostream& out) {
 		deque<Node*>::const_iterator iter = nodesQueue.begin();
 		for (int i = 0; i < nodesInThisLevel; i++, iter++) {
-			out << ((i == 0) ? setw(indentSpace + 2) : setw(2 * level + 2)) << ((*iter) ? intToString((*iter)->data) : "");
+			out << ((i == 0) ? setw(indentSpace + 2) : setw(2 * level + 2)) << ((*iter) ? intToString((*iter)->key) : "");
 		}
 		out << endl;
 	}
@@ -166,16 +234,88 @@ struct TreePrinter {
 	}
 };
 
-int main() {
-	srand(time(NULL));
-	Tree T;
-	T.fill(10);
+int getCommand();
 
-	// Output to console
-	TreePrinter TP;
-	//TP.printPretty(T.root, 1, 0, cout);
-	// Output to file
-	ofstream fout("tree_pretty.txt");
-	TP.printPretty(T.root, 1, 0, fout);
+int main() {
+	srand(static_cast<unsigned int>(time(NULL)));
+	Tree T;
+
+    int cmd = 0;
+    do {
+        cmd = getCommand();
+        int k;
+        switch (cmd) {
+            case 1: {
+                cout << "Введи ключ: ";
+                cin >> k;
+                T.root = T.addNode(T.root, k);
+                break;
+            }
+            case 2: {
+                cout << "Введи ключ для удаления: ";
+                cin >> k;
+                T.removeNode(k, T.root);
+                break;
+            }
+            case 3: {
+                cout << "Введи ключ для поиска: ";
+                cin >> k;
+                cout << "Элемент " << k;
+                int steps = T.findNode(k, T.root);
+                steps < 0 ? cout << " не найден." << endl : cout << " найден за " << steps << " шагов" << endl;
+                break;
+            }
+            case 6: {
+                TreePrinter TP;
+                cout << "Дерево:" << endl;
+                ofstream fout("Tree.txt");
+                // Выводв консоль
+                TP.printPretty(T.root, 1, 0, cout);
+                // Вывод в файл
+                TP.printPretty(T.root, 1, 0, fout);
+            }
+            case 0: {
+                cout << "Пока!" << endl;
+                break;
+            }
+            default: {
+                cerr << "Uknown error" << endl;
+                break;
+            }
+        }
+    } while (cmd);
 	return 0;
 }
+
+int getCommand() {
+    cout << "1. Добавить элемент." << endl;
+    cout << "2. Удалить элемент." << endl;
+    cout << "3. Найти элемент." << endl;
+    cout << "4. Вывести значение самого правого листа." << endl; // с кол-вом шагов
+    cout << "5. Построить дерево случайным образом." << endl;
+    cout << "6. Распечатать дерево." << endl;
+    cout << "0. Выход." << endl;
+    int cmd;
+    cin >> cmd;
+    
+    while (!cin.good() && cmd < 0 && cmd > 5) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cerr << "Неверная команда! Повторите ввод: ";
+        cin >> cmd;
+    }
+    
+    return cmd;
+}
+
+
+
+
+
+
+
+
+
+
+
+
