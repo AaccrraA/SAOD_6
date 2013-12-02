@@ -4,147 +4,17 @@
 #include <string>
 #include <sstream>
 #include <deque>
+#include <locale.h>
 #include <math.h>
+#include <Windows.h>
+#undef max
 using namespace std;
 
 struct Node {
 	Node *left, *right;
 	int key;
 	int height;
-	Node(int k) : left(NULL), right(NULL), key(k) { }
-};
-
-struct Tree {
-	Node *root;
-	Tree() : root(NULL) { }
-
-	void fill(int s) {
-		int v;
-        for (int i = 0; i < s; i++) {
-            v = rand() % 10;
-            addNode(root, v);
-        }
-	}
-    
-    // Р”РѕР±Р°РІР»СЏРµРј РЅРѕРІС‹Р№ СѓР·РµР»
-    Node* addNode(Node* n, int k) {
-        if (!n) return new Node(k);
-        if (k < n->key)
-            n->left = addNode(n->left, k);
-        else
-            n->right = addNode(n->right, k);
-        return balance(n);
-	}
-
-    // РЈРґР°Р»РµРЅРёРµ РєР»СЋС‡Р° k РёР· РґРµСЂРµРІР° n
-    Node* removeNode(int k, Node* n) {
-        if (!n) return 0;
-        if (k < n->key)
-            removeNode(k, n->left);
-        else if (k > n->key)
-            removeNode(k, n->right);
-        // k == n->key
-        else {
-            Node* q = n->left;
-            Node* r = n->right;
-            cout << "РЈР·РµР» " << n->key << "СѓРґР°Р»РµРЅ." << endl;
-            delete n;
-            if (!r) return q;
-            Node* min = findMinNode(r);
-            min->right = removeMinNode(r);
-            min->left = q;
-            return balance(min);
-        }
-        return balance(n);
-    }
-    
-    // РС‰РµРј СѓР·РµР» c РєР»СЋС‡РѕРј k Рё РІРѕР·РІСЂР°С‰Р°РµРј РєРѕР»-РІРѕ С€Р°РіРѕРІ
-    int findNode(int k, Node* n) {
-        if (!n) return -100;
-        if (n->key == k)
-            return 1;
-        else if (k < n->key)
-            return findNode(k, n->left) + 1;
-        else
-            return findNode(k, n->right) + 1;
-    }
-    
-private:
-    // РџРѕР»СѓС‡Р°РµРј РІС‹СЃРѕС‚Сѓ РґРµСЂРµРІР° n
-	unsigned char height(Node *n) {
-		return n ? n->height : 0;
-	}
-
-    // РџРѕР»СѓС‡Р°РµРј СЂР°Р·РЅРёС†Сѓ РІ РІС‹СЃРѕС‚Р°С… РґРµСЂРµРІР° n
-	int balanceFactor(Node *n) {
-		return height(n->left) - height(n->right);
-	}
-
-    // РСЃРїСЂР°РІР»СЏРµРј РІС‹СЃРѕС‚Сѓ РґРµСЂРµРІР° n
-    void fixHeight(Node *n) {
-        unsigned char hl = height(n->left);
-        unsigned char hr = height(n->right);
-        n->height = (hl > hr ? hl : hr) + 1;
-    }
-    
-    // РњР°Р»РѕРµ РїСЂР°РІРѕРµ РІСЂР°С‰РµРЅРёРµ РІРѕРєСЂСѓРі СѓР·Р»Р° n
-    Node* smallRightRotation(Node* n) {
-        Node* q = n->left;
-        n->left = q->right;
-        q->right = n;
-        fixHeight(n);
-        fixHeight(q);
-        return q;
-    }
-    
-    // РњР°Р»РѕРµ Р»РµРІРѕРµ РІСЂР°С‰РµРЅРёРµ
-    Node* smallLeftRotation(Node* n) {
-        Node* q = n->right;
-        n->right = q->left;
-        q->left = n;
-        fixHeight(n);
-        fixHeight(q);
-        return q;
-    }
-    
-    // Р‘Р°Р»Р°РЅСЃРёСЂСѓРµРј РґРµСЂРµРІРѕ СЃ РєРѕСЂРЅРµРј n Рё Р±Р°Р»Р°РЅСЃРѕРј 2.
-    // Р”РѕСЃС‚Р°С‚РѕС‡РЅРѕ РІС‹РїРѕР»РЅРёС‚СЊ Р»РёР±Рѕ РїСЂРѕСЃС‚РѕР№ РїРѕРІРѕСЂРѕС‚ РІР»РµРІРѕ РІРѕРєСЂСѓРі n,
-    // Р»РёР±Рѕ Р±РѕР»СЊС€РѕРµ РІСЂР°С‰РµРЅРёРµ РІР»РµРІРѕ РІРѕРєСЂСѓРі С‚РѕРіРѕ Р¶Рµ n
-    // Р”Р»СЏ Р±Р°Р»Р°РЅСЃРёСЂРѕРІРєРё РґРµСЂРµРІР° СЃ РєРѕСЂРЅРµРј n Рё Р±Р°Р»Р°РЅСЃРѕРј -2 - СЃРёРјРјРµС‚СЂРёС‡РЅС‹Рµ РґРµР№СЃС‚РІРёСЏ
-    Node* balance(Node* n) {
-        fixHeight(n);
-        // Р‘РѕР»СЊС€РѕРµ РїСЂР°РІРѕРµ РІСЂР°С‰РµРЅРёРµ
-        if (balanceFactor(n) == 2) {
-            if (balanceFactor(n->right) > 0) {
-                n->right = smallRightRotation(n->right);
-            }
-            return smallLeftRotation(n);
-        }
-        // Р‘РѕР»СЊС€РѕРµ Р»РµРІРѕРµ РІСЂР°С‰РµРЅРёРµ
-        else if (balanceFactor(n) == -2) {
-            if (balanceFactor(n->left) > 0) {
-                n->left = smallLeftRotation(n->left);
-            }
-            return smallRightRotation(n);
-        }
-        // Р‘Р°Р»Р°РЅСЃРёСЂРѕРІРєР° РЅРµ РЅСѓР¶РЅР°
-        else {
-            return n;
-        }
-    }
-    
-    // РџРѕРёСЃРє СѓР·Р»Р° СЃ РјРёРЅРёРјР°Р»СЊРЅС‹Рј РєР»СЋС‡РѕРј РІ РґРµСЂРµРІРµ n
-    Node* findMinNode(Node* n) {
-        return (!n->left) ? findMinNode(n->left) : n;
-    }
-    
-    // РЈРґР°Р»РµРЅРёРµ СѓР·Р»Р° СЃ РјРёРЅРёРјР°Р»СЊРЅС‹Рј РєР»СЋС‡РѕРј РІ РґРµСЂРµРІРµ n
-    Node* removeMinNode(Node* n) {
-        if (!n->left)
-            return n->right;
-        n->left = removeMinNode(n->left);
-        return balance(n);
-    }
+	Node(int k) : left(NULL), right(NULL), key(k), height(0){ }
 };
 
 // Print Tree in console
@@ -178,7 +48,7 @@ struct TreePrinter {
 	void printNodes(int branchLen, int nodeSpaceLen, int startLen, int nodesInThisLevel, const deque<Node*>& nodesQueue, ostream& out) {
 		deque<Node*>::const_iterator iter = nodesQueue.begin();
 		for (int i = 0; i < nodesInThisLevel; i++, iter++) {
-			out << ((i == 0) ? setw(startLen) : setw(nodeSpaceLen)) << "" << ((*iter && (*iter)->left) ? setfill('_') : setfill(' '));
+			out << ((i == 0) ? setw(startLen) : setw(nodeSpaceLen) << "" << ((*iter && (*iter)->left) ? setfill('_') : setfill(' '));
 			out << setw(branchLen + 2) << ((*iter) ? intToString((*iter)->key) : "");
 			out << ((*iter && (*iter)->right) ? setfill('_') : setfill(' ')) << setw(branchLen) << "" << setfill(' ');
 		}
@@ -203,7 +73,7 @@ struct TreePrinter {
 		int nodesInThisLevel = 1;
 
 		int branchLen = 2 * ((int)pow(2.0, h) - 1) - (3 - level)*(int)pow(2.0, h - 1);  // eq of the length of branch for each node of each level
-		int nodeSpaceLen = 2 + (level + 1)*(int)pow(2.0, h);  // distance between left neighbor node's right arm and right neighbor node's left arm
+		int nodeSpaceLen = 2 + (level + 1)*(int)pow(2.0, h) + 10;  // distance between left neighbor node's right arm and right neighbor node's left arm
 		int startLen = branchLen + (3 - level) + indentSpace;  // starting space to the first node to print of each level (for the left most node of each level only)
 
 		deque<Node*> nodesQueue;
@@ -234,78 +104,240 @@ struct TreePrinter {
 	}
 };
 
+struct Tree {
+	Node *root;
+	Tree() : root(NULL) { }
+	TreePrinter TP;
+
+	void fill(int s) {
+		int v;
+		for (int i = 0; i < s; i++) {
+			v = rand() % 10;
+			addNode(root, v);
+		}
+	}
+
+	// Добавляем новый узел
+	Node* addNode(Node* n, int k) {
+		if (!n) return new Node(k);
+		if (k < n->key)
+			n->left = addNode(n->left, k);
+		else if (k > n->key)
+			n->right = addNode(n->right, k);
+		return balance(n);
+	}
+
+	// Удаление ключа k из дерева n
+	Node* removeNode(int k, Node* n) {
+		if (!n) return 0;
+		if (k < n->key)
+			removeNode(k, n->left);
+		else if (k > n->key)
+			removeNode(k, n->right);
+		// k == n->key
+		else {
+			Node* q = n->left;
+			Node* r = n->right;
+			cout << "Узел " << n->key << " удален." << endl;
+			delete n;
+			if (!r) return q;
+			Node* min = findMinNode(r);
+			min->right = removeMinNode(r);
+			min->left = q;
+			return balance(min);
+		}
+		return balance(n);
+	}
+
+	// Ищем узел c ключом k и возвращаем кол-во шагов
+	int findNode(int k, Node* n) {
+		if (!n) return -100;
+		if (n->key == k)
+			return 1;
+		else if (k < n->key)
+			return findNode(k, n->left) + 1;
+		else
+			return findNode(k, n->right) + 1;
+	}
+
+	// Выводим дерево
+	void printTree() {
+		ofstream fout("Tree.txt");
+		if (TP.maxHeight(root) < 6) {
+			cout << "Дерево:" << endl;
+			TP.printPretty(root, 1, 0, cout);
+			TP.printPretty(root, 1, 0, fout);
+		}
+		else {
+			cout << "Дерево не поместилось в консоли и сохранено в файле." << endl;
+			TP.printPretty(root, 1, 0, fout);
+		}
+	}
+
+private:
+	// Получаем высоту дерева n
+	int height(Node *n) {
+		return n ? n->height : 0;
+	}
+
+	// Получаем разницу в высотах дерева n
+	int balanceFactor(Node *n) {
+		if (!n) return 0;
+		else
+			return height(n->left) - height(n->right);
+	}
+
+	// Исправляем высоту дерева n
+	void fixHeight(Node *n) {
+		int hl = height(n->left);
+		int hr = height(n->right);
+		if (!n->left && !n->right) {
+			n->height = 0;
+		}
+		else {
+			n->height = (hl > hr ? hl : hr) + 1;
+		}
+	}
+
+	// Малое правое вращение вокруг узла n
+	Node* smallRightRotation(Node* n) {
+		Node* q = n->left;
+		n->left = q->right;
+		q->right = n;
+		fixHeight(n);
+		fixHeight(q);
+		return q;
+	}
+
+	// Малое левое вращение
+	Node* smallLeftRotation(Node* n) {
+		Node* q = n->right;
+		n->right = q->left;
+		q->left = n;
+		fixHeight(n);
+		fixHeight(q);
+		return q;
+	}
+
+	// Балансируем дерево с корнем n и балансом 2.
+	// Достаточно выполнить либо простой поворот влево вокруг n,
+	// либо большое вращение влево вокруг того же n
+	// Для балансировки дерева с корнем n и балансом -2 - симметричные действия
+	Node* balance(Node* n) {
+		fixHeight(n);
+		// Большое правое вращение
+		if (balanceFactor(n) == 2) {
+			if (balanceFactor(n->right) <= 0) {
+				n->left = smallLeftRotation(n->left);
+			}
+			return smallRightRotation(n);
+		}
+		// Большое левое вращение
+		else if (balanceFactor(n) == -2) {
+			if (balanceFactor(n->right) > 0) {
+				n->right = smallRightRotation(n->right);
+			}
+			return smallLeftRotation(n);
+		}
+		// Балансировка не нужна
+		else {
+			return n;
+		}
+	}
+
+	// Поиск узла с минимальным ключом в дереве n
+	Node* findMinNode(Node* n) {
+		if (n->left != NULL)
+			findMinNode(n->left);
+		else
+			return n;
+		//return (!n->left) ? findMinNode(n->left) : n;
+	}
+
+	// Удаление узла с минимальным ключом в дереве n
+	Node* removeMinNode(Node* n) {
+		if (!n->left)
+			return n->right;
+		n->left = removeMinNode(n->left);
+		return balance(n);
+	}
+};
+
 int getCommand();
 
 int main() {
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+
 	srand(static_cast<unsigned int>(time(NULL)));
 	Tree T;
+	TreePrinter TP;
 
-    int cmd = 0;
-    do {
-        cmd = getCommand();
-        int k;
-        switch (cmd) {
-            case 1: {
-                cout << "Р’РІРµРґРё РєР»СЋС‡: ";
-                cin >> k;
-                T.root = T.addNode(T.root, k);
-                break;
-            }
-            case 2: {
-                cout << "Р’РІРµРґРё РєР»СЋС‡ РґР»СЏ СѓРґР°Р»РµРЅРёСЏ: ";
-                cin >> k;
-                T.removeNode(k, T.root);
-                break;
-            }
-            case 3: {
-                cout << "Р’РІРµРґРё РєР»СЋС‡ РґР»СЏ РїРѕРёСЃРєР°: ";
-                cin >> k;
-                cout << "Р­Р»РµРјРµРЅС‚ " << k;
-                int steps = T.findNode(k, T.root);
-                steps < 0 ? cout << " РЅРµ РЅР°Р№РґРµРЅ." << endl : cout << " РЅР°Р№РґРµРЅ Р·Р° " << steps << " С€Р°РіРѕРІ" << endl;
-                break;
-            }
-            case 6: {
-                TreePrinter TP;
-                cout << "Р”РµСЂРµРІРѕ:" << endl;
-                ofstream fout("Tree.txt");
-                // Р’С‹РІРѕРґРІ РєРѕРЅСЃРѕР»СЊ
-                TP.printPretty(T.root, 1, 0, cout);
-                // Р’С‹РІРѕРґ РІ С„Р°Р№Р»
-                TP.printPretty(T.root, 1, 0, fout);
-            }
-            case 0: {
-                cout << "РџРѕРєР°!" << endl;
-                break;
-            }
-            default: {
-                cerr << "Uknown error" << endl;
-                break;
-            }
-        }
-    } while (cmd);
+	for (int i = 100; i < 150; i++) {
+		T.root = T.addNode(T.root, i);
+		if (i % 10 == 0)
+			T.printTree();
+	}
+	T.printTree();
+	return 0;
+	int cmd = 0;
+	do {
+		cmd = getCommand();
+		int k;
+		int steps = 0;
+		switch (cmd) {
+			case 1:
+				cout << "Введи ключ: ";
+				cin >> k;
+				T.root = T.addNode(T.root, k);
+				T.printTree();
+				break;
+			case 2:
+				cout << "Введи ключ для удаления: ";
+				cin >> k;
+				T.root = T.removeNode(k, T.root);
+				T.printTree();
+				break;
+			case 3:	
+				cout << "Введи ключ для поиска: ";
+				cin >> k;
+				cout << "Элемент " << k;
+				steps = T.findNode(k, T.root);
+				steps < 0 ? cout << " не найден." << endl : cout << " найден за " << steps << " шагов" << endl;
+				break;
+			case 6:
+				T.printTree();
+				break;
+			case 0:
+				cout << "Пока!" << endl;
+				break;
+			default:
+				cerr << "Uknown error" << endl;
+				break;
+		}
+	} while (cmd);
 	return 0;
 }
 
 int getCommand() {
-    cout << "1. Р”РѕР±Р°РІРёС‚СЊ СЌР»РµРјРµРЅС‚." << endl;
-    cout << "2. РЈРґР°Р»РёС‚СЊ СЌР»РµРјРµРЅС‚." << endl;
-    cout << "3. РќР°Р№С‚Рё СЌР»РµРјРµРЅС‚." << endl;
-    cout << "4. Р’С‹РІРµСЃС‚Рё Р·РЅР°С‡РµРЅРёРµ СЃР°РјРѕРіРѕ РїСЂР°РІРѕРіРѕ Р»РёСЃС‚Р°." << endl; // СЃ РєРѕР»-РІРѕРј С€Р°РіРѕРІ
-    cout << "5. РџРѕСЃС‚СЂРѕРёС‚СЊ РґРµСЂРµРІРѕ СЃР»СѓС‡Р°Р№РЅС‹Рј РѕР±СЂР°Р·РѕРј." << endl;
-    cout << "6. Р Р°СЃРїРµС‡Р°С‚Р°С‚СЊ РґРµСЂРµРІРѕ." << endl;
-    cout << "0. Р’С‹С…РѕРґ." << endl;
-    int cmd;
-    cin >> cmd;
-    
-    while (!cin.good() && cmd < 0 && cmd > 5) {
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        cerr << "РќРµРІРµСЂРЅР°СЏ РєРѕРјР°РЅРґР°! РџРѕРІС‚РѕСЂРёС‚Рµ РІРІРѕРґ: ";
-        cin >> cmd;
-    }
-    
-    return cmd;
+	cout << "1. Добавить элемент." << endl;
+	cout << "2. Удалить элемент." << endl;
+	cout << "3. Найти элемент." << endl;
+	cout << "4. Вывести значение самого правого листа." << endl; // с кол-вом шагов
+	cout << "5. Построить дерево случайным образом." << endl;
+	cout << "6. Распечатать дерево." << endl;
+	cout << "0. Выход." << endl;
+	int cmd;
+	cin >> cmd;
+
+	while (!cin.good() && cmd < 0 && cmd > 6) {
+		cin.clear();
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		cerr << "Неверная команда! Повторите ввод: ";
+		cin >> cmd;
+	}
+
+	return cmd;
 }
 
 
