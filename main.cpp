@@ -38,7 +38,7 @@ struct TreePrinter {
 	void printBranches(int branchLen, int nodeSpaceLen, int startLen, int nodesInThisLevel, const deque<Node*>& nodesQueue, ostream& out) {
 		deque<Node*>::const_iterator iter = nodesQueue.begin();
 		for (int i = 0; i < nodesInThisLevel / 2; i++) {
-			out << ((i == 0) ? setw(startLen - 1) : setw(nodeSpaceLen - 2)) << "" << ((*iter++) ? "/" : " ");
+			out << ((i == 0) ? setw(startLen - 1) : setw(nodeSpaceLen - 1)) << "" << ((*iter++) ? "/" : " ");
 			out << setw(2 * branchLen + 2) << "" << ((*iter++) ? "\\" : " ");
 		}
 		out << endl;
@@ -48,7 +48,7 @@ struct TreePrinter {
 	void printNodes(int branchLen, int nodeSpaceLen, int startLen, int nodesInThisLevel, const deque<Node*>& nodesQueue, ostream& out) {
 		deque<Node*>::const_iterator iter = nodesQueue.begin();
 		for (int i = 0; i < nodesInThisLevel; i++, iter++) {
-			out << ((i == 0) ? setw(startLen) : setw(nodeSpaceLen) << "" << ((*iter && (*iter)->left) ? setfill('_') : setfill(' '));
+			out << ((i == 0) ? setw(startLen) : setw(nodeSpaceLen)) << "" << ((*iter && (*iter)->left) ? setfill('_') : setfill(' '));
 			out << setw(branchLen + 2) << ((*iter) ? intToString((*iter)->key) : "");
 			out << ((*iter && (*iter)->right) ? setfill('_') : setfill(' ')) << setw(branchLen) << "" << setfill(' ');
 		}
@@ -59,7 +59,8 @@ struct TreePrinter {
 	void printLeaves(int indentSpace, int level, int nodesInThisLevel, const deque<Node*>& nodesQueue, ostream& out) {
 		deque<Node*>::const_iterator iter = nodesQueue.begin();
 		for (int i = 0; i < nodesInThisLevel; i++, iter++) {
-			out << ((i == 0) ? setw(indentSpace + 2) : setw(2 * level + 2)) << ((*iter) ? intToString((*iter)->key) : "");
+			int l = ((*iter) ? intToString((*iter)->key).length() - 1 : 0);
+			out << ((i == 0) ? setw(indentSpace) : (setw(2*level + 2))) << ((*iter) ? intToString((*iter)->key) : "");
 		}
 		out << endl;
 	}
@@ -73,7 +74,7 @@ struct TreePrinter {
 		int nodesInThisLevel = 1;
 
 		int branchLen = 2 * ((int)pow(2.0, h) - 1) - (3 - level)*(int)pow(2.0, h - 1);  // eq of the length of branch for each node of each level
-		int nodeSpaceLen = 2 + (level + 1)*(int)pow(2.0, h) + 10;  // distance between left neighbor node's right arm and right neighbor node's left arm
+		int nodeSpaceLen = 2 + (level + 1)*(int)pow(2.0, h);  // distance between left neighbor node's right arm and right neighbor node's left arm
 		int startLen = branchLen + (3 - level) + indentSpace;  // starting space to the first node to print of each level (for the left most node of each level only)
 
 		deque<Node*> nodesQueue;
@@ -165,13 +166,12 @@ struct Tree {
 		ofstream fout("Tree.txt");
 		if (TP.maxHeight(root) < 6) {
 			cout << "Дерево:" << endl;
-			TP.printPretty(root, 1, 0, cout);
-			TP.printPretty(root, 1, 0, fout);
+			TP.printPretty(root, 1, 1, cout);
 		}
 		else {
 			cout << "Дерево не поместилось в консоли и сохранено в файле." << endl;
-			TP.printPretty(root, 1, 0, fout);
 		}
+		TP.printPretty(root, 1, 1, fout);
 	}
 
 private:
@@ -198,7 +198,7 @@ private:
 			n->height = (hl > hr ? hl : hr) + 1;
 		}
 	}
-
+	asdfasdfasdf
 	// Малое правое вращение вокруг узла n
 	Node* smallRightRotation(Node* n) {
 		Node* q = n->left;
@@ -273,9 +273,9 @@ int main() {
 	Tree T;
 	TreePrinter TP;
 
-	for (int i = 100; i < 150; i++) {
+	for (int i = 100; i < 140; i++) {
 		T.root = T.addNode(T.root, i);
-		if (i % 10 == 0)
+		if (i % 10 == 1)
 			T.printTree();
 	}
 	T.printTree();
